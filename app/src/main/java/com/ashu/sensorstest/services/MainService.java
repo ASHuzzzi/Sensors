@@ -181,7 +181,7 @@ public class MainService extends Service {
         Schedule_Cleaning_of_databases = Executors.newScheduledThreadPool(1);
         Schedule_Cleaning_of_databases.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                Cleaner_DB();
+                //Cleaner_DB();
             }
         }, 0, 1, TimeUnit.MINUTES);
     }

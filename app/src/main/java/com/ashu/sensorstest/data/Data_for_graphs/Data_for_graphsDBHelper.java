@@ -146,13 +146,14 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
 
         Cursor cursor;
         ArrayMap<Long, String> Query_Result = new ArrayMap<>();
+        long begin_selection = TimeOfChange - Interval_Step;
 
         String[] projection = {
                 DBDataCollection.Column_DataTime,
                 DBDataCollection.Column_SensorData};
 
         String selection = DBDataCollection.Column_SensorType + "= '" + SensorType + "' AND "
-                + DBDataCollection.Column_DataTime + " BETWEEN " + (TimeOfChange- Interval_Step) + " AND "
+                + DBDataCollection.Column_DataTime + " BETWEEN " + (begin_selection) + " AND "
                 + (TimeOfChange);
 
         cursor = myDataBase.query(
