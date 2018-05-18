@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.ArrayMap;
+import android.util.Log;
 
 import com.ashu.sensorstest.data.Data_for_graphs.Data_for_graphsDBContract.DBDataCollection;
 
@@ -16,6 +17,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Objects;
 
 public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
@@ -25,6 +28,8 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
     private static String DB_NAME = "Data_for_graphs.db";
     private SQLiteDatabase myDataBase;
     private final Context mContext;
+
+    private String LOG_TAG = "myLogs";
 
     public Data_for_graphsDBHelper(Context context) {
         super(context, DB_NAME, null, 1);
@@ -127,6 +132,7 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
         newValues.put(DBDataCollection.Column_DataTime, TimeOfChange);
         newValues.put(DBDataCollection.Column_SensorData, SensorData);
         myDataBase.insert(DBDataCollection.TABLE_NAME, null, newValues);
+        //Check_Record_DB(TimeOfChange);
     }
 
     public void Clear_DB_for_graphs(long TimeOfChange, int Interval_Step){ //чтобы не захламлять БД, чистим ее каждую минуту от данных страше двух минут с момента запуска
@@ -172,13 +178,30 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
                         cursor.getLong(cursor.getColumnIndex(DBDataCollection.Column_DataTime)),
                         cursor.getString(cursor.getColumnIndex(DBDataCollection.Column_SensorData)));
             }while (cursor.moveToNext());
-
+            cursor.close();
         }
-        Objects.requireNonNull(cursor).close();
+        //Check_DB(begin_selection, TimeOfChange, Query_Result.size());
         return Query_Result;
     }
 
     public void Close_DB_for_graphs(){
         myDataBase.close();
+    }
+
+   /* private void Check_DB(long start, long end, int quntity){
+
+        String dateString1 = new SimpleDateFormat("mm:ss").format(new Date(start));
+        String dateString2 = new SimpleDateFormat("mm:ss").format(new Date(end));
+        Log.d(LOG_TAG, "C " + dateString1 + " по " + dateString2 + " получилось " + quntity + "записей");
+
+
+    }*/
+
+    private void Check_Record_DB(long start){
+
+        String dateString2 = new SimpleDateFormat("mm:ss").format(new Date(start));
+        Log.d(LOG_TAG, "На " + dateString2 + " записал " + 1 + "запись");
+
+
     }
 }

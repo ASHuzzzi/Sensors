@@ -13,8 +13,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,6 +53,9 @@ public class MainService extends Service {
 
     private NotificationManager notificationManager;
     public static final int DEFAULT_NOTIFICATION_ID = 101;
+    ArrayList<String> Test_Array = new ArrayList<>();;
+    long Test_lasttime = 0;
+    PowerManager.WakeLock mWakeLock;
 
     public void onCreate() {
         super.onCreate();
@@ -84,7 +89,7 @@ public class MainService extends Service {
     }
 
     public void onDestroy() {
-        super.onDestroy();
+
         if (sensorManagerService != null) {
             sensorManagerService.unregisterListener(listener);
         }
@@ -103,6 +108,7 @@ public class MainService extends Service {
 
         //Disabling service
         stopSelf();
+        super.onDestroy();
     }
 
     public IBinder onBind(Intent intent) {
@@ -134,7 +140,12 @@ public class MainService extends Service {
                 case Sensor.TYPE_LINEAR_ACCELERATION:
                     System.arraycopy(event.values, 0, valuesAcceleration, 0, 3);
                     finished_line = stringBuilder.BS_Data_from_sensors(valuesAcceleration);
-                    mDbHelper_Sensors.Recording_Data_From_Sensors("ACCELERATION", timenow, finished_line);
+                    //mDbHelper_Sensors.Recording_Data_From_Sensors("ACCELERATION", timenow, finished_line);
+                    if (timenow - Test_lasttime > 1000){
+                        Test_lasttime = timenow;
+                        Log.d(LOG_TAG, "Датчик работает.");
+                    }
+                    Test_Array.add(finished_line);
                     break;
             }
         }
@@ -145,21 +156,29 @@ public class MainService extends Service {
         Schedule_Data_Processing = Executors.newScheduledThreadPool(1);
         Schedule_Data_Processing.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                Processing_of_data_from_sensors();
+                acquireWakeLock();
+
+                ArrayList<String> Buffer = new ArrayList<>(Test_Array);
+                Test_Array.clear();
+                //Log.d(LOG_TAG, "Проверка расписания " + Buffer.size());
+                Processing_of_data_from_sensors(Buffer);
             }
         }, 0, 1, TimeUnit.SECONDS);
     }
 
 
-    private void Processing_of_data_from_sensors() {
+    private void Processing_of_data_from_sensors(ArrayList<String> buffer) {
 
         long timenow = TakeTimeNow();
         ArrayList<String> Query_Result;
         String row_fot_writing;
         int Interval_Step = 1000; //в миллисекундах. За какой промежуток будем делать выборку
         String sensor_type = "ACCELERATION";
-        Log.d(LOG_TAG, "Пуск обработки");
-        Query_Result = mDbHelper_Sensors.Read_DBData_From_Sensors(sensor_type, timenow, Interval_Step);
+
+        row_fot_writing = sensors.Acceleration(buffer);
+        mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
+        //Log.d(LOG_TAG, "Запись окончена");
+        /*Query_Result = mDbHelper_Sensors.Read_DBData_From_Sensors(sensor_type, timenow, Interval_Step);
         if (Query_Result.size() > 0 && !Query_Result.get(0).isEmpty()){
             row_fot_writing = sensors.Acceleration(Query_Result);
             mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
@@ -172,7 +191,7 @@ public class MainService extends Service {
             row_fot_writing = sensors.Gyroscope(Query_Result);
             mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
             Log.d(LOG_TAG, sensor_type + row_fot_writing);
-        }
+        }*/
     }
 
 
@@ -181,7 +200,7 @@ public class MainService extends Service {
         Schedule_Cleaning_of_databases = Executors.newScheduledThreadPool(1);
         Schedule_Cleaning_of_databases.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                //Cleaner_DB();
+                Cleaner_DB();
             }
         }, 0, 1, TimeUnit.MINUTES);
     }
@@ -224,5 +243,23 @@ public class MainService extends Service {
         notification = builder.build();
 
         startForeground(DEFAULT_NOTIFICATION_ID, notification);
+    }
+
+    public void acquireWakeLock() {
+        final PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        releaseWakeLock();
+        //Acquire new wake lock
+        if (powerManager != null) {
+            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PARTIAL_WAKE_LOCK");
+            mWakeLock.acquire();
+        }
+
+    }
+
+    public void releaseWakeLock() {
+        if (mWakeLock != null && mWakeLock.isHeld()) {
+            mWakeLock.release();
+            mWakeLock = null;
+        }
     }
 }
