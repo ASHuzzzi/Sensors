@@ -4,6 +4,17 @@ import com.ashu.sensorstest.string_builders.StringBuilders;
 
 import java.util.ArrayList;
 
+
+/*
+В данном классе обрабатываются данные с сенсоров за минуту. На входе имеем массив, на
+выходе среднее значение.
+Методы для акселерометра и гироскопа идентичны, т.к. они дают на выходе 3 переменные и
+их можно было бы свести к одному. Но решил оставить, дабы показать, что:
+1) обработку данных внутри метода для каждого датчика можно настроить как угодно, и это не повлияет
+на обработку данных для других датчиков;
+2) можно добавить/удалить любое количество других датчиков, и это также не повлияет на работу
+остальных.
+ */
 public class Sensors {
 
     private double[] x_value;
@@ -19,14 +30,14 @@ public class Sensors {
 
     public native double CountAVR(double[] x_value);
 
-    public String Acceleration(ArrayList<String> Query_Result){
-        x_value = new double[Query_Result.size()];
-        y_value = new double[Query_Result.size()];
-        z_value = new double[Query_Result.size()];
+    public String Acceleration(ArrayList<String> arr_value){
+        x_value = new double[arr_value.size()];
+        y_value = new double[arr_value.size()];
+        z_value = new double[arr_value.size()];
         result_of_work = new ArrayList<>();
-        for (int i = 0; i<Query_Result.size(); i++){
+        for (int i = 0; i<arr_value.size(); i++){
             String[] separated = new String[3];
-            String[] shared_request = Query_Result.get(i).split(";");
+            String[] shared_request = arr_value.get(i).split(";");
             for (int j = 0; j < 3; j++){
 
                 separated[j] = shared_request[j].replace(",", ".");
@@ -56,14 +67,14 @@ public class Sensors {
         return stringBuilder.BS_Data_for_graphs(result_of_work);
     }
 
-    public String Gyroscope (ArrayList<String> Query_Result){
-        x_value = new double[Query_Result.size()];
-        y_value = new double[Query_Result.size()];
-        z_value = new double[Query_Result.size()];
+    public String Gyroscope (ArrayList<String> arr_value){
+        x_value = new double[arr_value.size()];
+        y_value = new double[arr_value.size()];
+        z_value = new double[arr_value.size()];
         result_of_work = new ArrayList<>();
-        for (int i = 0; i<Query_Result.size(); i++){
+        for (int i = 0; i<arr_value.size(); i++){
             String[] separated = new String[3];
-            String[] shared_request = Query_Result.get(i).split(";");
+            String[] shared_request = arr_value.get(i).split(";");
             for (int j = 0; j < 3; j++){
 
                 separated[j] = shared_request[j].replace(",", ".");

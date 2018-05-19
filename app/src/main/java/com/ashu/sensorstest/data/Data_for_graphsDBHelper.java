@@ -1,4 +1,4 @@
-package com.ashu.sensorstest.data.Data_from_sensors;
+package com.ashu.sensorstest.data;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
@@ -8,25 +8,24 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.ArrayMap;
 
-import com.ashu.sensorstest.data.Data_from_sensors.Data_from_sensorsDBContract.DBDataCollection;
+import com.ashu.sensorstest.data.Data_for_graphsDBContract.DBDataCollection;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
-public class Data_from_sensorsDBHelper extends SQLiteOpenHelper {
-
+public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
     // путь к базе данных вашего приложения
     @SuppressLint("SdCardPath")
-    private static String DB_PATH = "/data/data/com.ashu.sensorstest/databases/";
-    private static String DB_NAME = "Data_from_sensors.db";
+    private final String DB_PATH = "/data/data/com.ashu.sensorstest/databases/";
+    private static String DB_NAME = "Data_for_graphs.db";
     private SQLiteDatabase myDataBase;
     private final Context mContext;
 
-    public Data_from_sensorsDBHelper(Context context) {
+    public Data_for_graphsDBHelper(Context context) {
         super(context, DB_NAME, null, 1);
         this.mContext = context;
     }
@@ -119,7 +118,7 @@ public class Data_from_sensorsDBHelper extends SQLiteOpenHelper {
     }
 
     //запись в базу данных с датчиков
-    public void Recording_Data_From_Sensors(String SensorType, long TimeOfChange, String SensorData){
+    public void Recording_Data_for_graphs(String SensorType, long TimeOfChange, String SensorData){
         myDataBase = this.getWritableDatabase();
         ContentValues newValues = new ContentValues();
 
@@ -127,20 +126,33 @@ public class Data_from_sensorsDBHelper extends SQLiteOpenHelper {
         newValues.put(DBDataCollection.Column_DataTime, TimeOfChange);
         newValues.put(DBDataCollection.Column_SensorData, SensorData);
         myDataBase.insert(DBDataCollection.TABLE_NAME, null, newValues);
-
     }
 
-    // чтение данных из базы
-    public ArrayList<String> Read_DBData_From_Sensors(String SensorType, long TimeOfChange, int Interval_Step){
+    public void Clear_DB_for_graphs(long TimeOfChange, int Interval_Step){ //чтобы не захламлять БД, чистим ее каждую минуту от данных страше двух минут с момента запуска
+        myDataBase = this.getWritableDatabase();
+
+        String selection = DBDataCollection.Column_DataTime + " < " + (TimeOfChange - Interval_Step);
+
+        myDataBase.delete(
+                DBDataCollection.TABLE_NAME,
+                selection,
+                null
+        );
+    }
+
+    public ArrayMap<Long, String> Read_DBData_for_graphs(String SensorType, long TimeOfChange, int Interval_Step){
         myDataBase = this.getReadableDatabase();
 
         Cursor cursor;
-        ArrayList<String> Query_Result = new ArrayList<>();
+        ArrayMap<Long, String> Query_Result = new ArrayMap<>();
+        long begin_selection = TimeOfChange - Interval_Step;
 
-        String[] projection = {DBDataCollection.Column_SensorData};
+        String[] projection = {
+                DBDataCollection.Column_DataTime,
+                DBDataCollection.Column_SensorData};
 
         String selection = DBDataCollection.Column_SensorType + "= '" + SensorType + "' AND "
-                + DBDataCollection.Column_DataTime + " BETWEEN " + (TimeOfChange- Interval_Step) + " AND "
+                + DBDataCollection.Column_DataTime + " BETWEEN " + (begin_selection) + " AND "
                 + (TimeOfChange);
 
         cursor = myDataBase.query(
@@ -155,31 +167,17 @@ public class Data_from_sensorsDBHelper extends SQLiteOpenHelper {
 
         if (cursor !=null && cursor.moveToFirst()){
             do {
-                Query_Result.add(cursor.getString(cursor.getColumnIndex(DBDataCollection.Column_SensorData)));
+                Query_Result.put(
+                        cursor.getLong(cursor.getColumnIndex(DBDataCollection.Column_DataTime)),
+                        cursor.getString(cursor.getColumnIndex(DBDataCollection.Column_SensorData)));
             }while (cursor.moveToNext());
             cursor.close();
         }
-
         return Query_Result;
     }
 
-    public void Clear_DB_for_sensors(long TimeOfChange, int Interval_Step){ //чтобы не захламлять БД, чистим ее каждую минуту от данных страше двух минут с момента запуска
-        myDataBase = this.getWritableDatabase();
-
-        String selection = DBDataCollection.Column_DataTime + " < " + (TimeOfChange - Interval_Step);
-
-        myDataBase.delete(
-                DBDataCollection.TABLE_NAME,
-                selection,
-                null
-        );
-    }
-
-    public void Close_DB_from_sensors(){
+    public void Close_DB_for_graphs(){
         myDataBase.close();
     }
 
-    // Здесь можно добавить вспомогательные методы для доступа и получения данных из БД
-    // вы можете возвращать курсоры через "return myDataBase.query(....)", это облегчит их использование
-// в создании адаптеров для ваших view
 }

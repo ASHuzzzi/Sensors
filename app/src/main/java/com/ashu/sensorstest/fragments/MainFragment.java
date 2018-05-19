@@ -13,8 +13,7 @@ import android.widget.Button;
 
 
 import com.ashu.sensorstest.R;
-import com.ashu.sensorstest.data.Data_for_graphs.Data_for_graphsDBHelper;
-import com.ashu.sensorstest.data.Data_from_sensors.Data_from_sensorsDBHelper;
+import com.ashu.sensorstest.data.Data_for_graphsDBHelper;
 import com.ashu.sensorstest.services.MainService;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -60,10 +59,6 @@ public class MainFragment extends Fragment {
 
         Button stopp = v.findViewById(R.id.btnStop);
 
-        Data_from_sensorsDBHelper mDbHelper_Sensors = new Data_from_sensorsDBHelper(getContext());
-        mDbHelper_Sensors.createDataBase();
-        mDbHelper_Sensors.openDataBase();
-        mDbHelper_Sensors.close();
 
         mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
         mDbHelper_Graphs.createDataBase();
@@ -82,18 +77,18 @@ public class MainFragment extends Fragment {
             }
         });
 
-        Calendar cal = Calendar.getInstance();
+       /* Calendar cal = Calendar.getInstance();
         long timenow = cal.getTimeInMillis();
         int Interval_Step = 300000;
 
-        Load_Data_from_DB("ACCELERATION", timenow, Interval_Step);
+        Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
         LineData data1 = data;
 
-        Load_Data_from_DB("GYROSCOPE", timenow, Interval_Step);
+        Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
         LineData data2 = data;
 
         DrawGraph1(data1);
-        DrawGraph2(data2);
+        DrawGraph2(data2);*/
 
         return v;
     }
@@ -110,10 +105,10 @@ public class MainFragment extends Fragment {
                 long timenow = cal.getTimeInMillis();
                 int Interval_Step = 300000;
 
-                Load_Data_from_DB("ACCELERATION", timenow, Interval_Step);
+                Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
                 LineData data1 = data;
 
-                Load_Data_from_DB("GYROSCOPE", timenow, Interval_Step);
+                Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
                 LineData data2 = data;
 
                 Drawing_Graphs(data1, data2);

@@ -1,9 +1,13 @@
 <resources>
     <string name="app_name">SensorsTest</string>
-    <string name="start">Start</string>
     <string name="stop">Stop</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Текст для уведомления -->
+    <string name="text_for_Notification">Обработка данных с датчиков</string>
+
+    <!-- Датчики которые используются в приложении -->
+    <string name="ACCELERATION">Акселерометр</string>
+    <string name="GYROSCOPE">Гироскоп</string>
 
 </resources>
