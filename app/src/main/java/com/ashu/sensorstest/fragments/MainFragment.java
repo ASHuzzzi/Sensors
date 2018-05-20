@@ -3,6 +3,9 @@ package com.ashu.sensorstest.fragments;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.ArrayMap;
@@ -10,6 +13,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 
 
 import com.ashu.sensorstest.R;
@@ -31,34 +36,43 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 
 public class MainFragment extends Fragment {
 
+    private Sensor sensorGyroscope;
+    private Sensor sensorAccelerometer;
+
     private LineChart mChart_1;
     private LineChart mChart_2;
-
-
-    List<Entry> xValue;
-    List<Entry> yValue;
-    List<Entry> zValue;
-    ArrayList<ILineDataSet> dataSets;
-    View v = null;
-    LineData data;
+    private ProgressBar progressBar;
+    private LinearLayout llChart;
+    private LineData data;
 
     private Data_for_graphsDBHelper mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
-
     private ScheduledExecutorService Schedule_Load_Data;
+    private SharedPreferences prefs = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.fragment_main, container, false);
+        View v = inflater.inflate(R.layout.fragment_main, container, false);
 
 
-        this.setRetainInstance(true); //1
+        this.setRetainInstance(true);
+
+        prefs = Objects.requireNonNull(getActivity()).getSharedPreferences("com.ashu.sensorstest", Context.MODE_PRIVATE);
 
         Button stopp = v.findViewById(R.id.btnStop);
+        progressBar = v.findViewById(R.id.progressBar);
+        llChart = v.findViewById(R.id.llChart);
 
+        SensorManager sensorManagerService = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+        if (sensorManagerService != null) {
+            sensorGyroscope = sensorManagerService.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            sensorAccelerometer = sensorManagerService.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        }
 
         mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
         mDbHelper_Graphs.createDataBase();
@@ -77,43 +91,41 @@ public class MainFragment extends Fragment {
             }
         });
 
-       /* Calendar cal = Calendar.getInstance();
-        long timenow = cal.getTimeInMillis();
-        int Interval_Step = 300000;
-
-        Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
-        LineData data1 = data;
-
-        Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
-        LineData data2 = data;
-
-        DrawGraph1(data1);
-        DrawGraph2(data2);*/
-
         return v;
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        if (prefs.getBoolean("firstrun", true)) {
+            progressBar.setVisibility(View.VISIBLE);
+            llChart.setVisibility(View.INVISIBLE);
+            prefs.edit().putBoolean("firstrun", false).apply();
+        }
 
         Schedule_Load_Data = Executors.newScheduledThreadPool(1);
         Schedule_Load_Data.scheduleAtFixedRate(new Runnable() {
             public void run(){
 
+                LineData data1 = null;
+                LineData data2 = null;
                 Calendar cal = Calendar.getInstance();
                 long timenow = cal.getTimeInMillis();
                 int Interval_Step = 300000;
 
-                Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
-                LineData data1 = data;
+                if(!(sensorGyroscope == null)){
+                    Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
+                    data1 = data;
+                }
 
-                Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
-                LineData data2 = data;
+                if (!(sensorAccelerometer == null)){
+                    Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
+                    data2 = data;
+                }
 
                 Drawing_Graphs(data1, data2);
             }
-        }, 1, 1, TimeUnit.SECONDS);
+        }, 0, 1, TimeUnit.SECONDS);
 
     }
     public void Drawing_Graphs(final LineData data_1, final LineData data_2) {
@@ -122,8 +134,17 @@ public class MainFragment extends Fragment {
             @Override
             public void run() {
 
-                DrawGraph1(data_1);
-                DrawGraph2(data_2);
+                if (!(sensorGyroscope == null ) && !(data_1 == null)){
+                    DrawGraph1(data_1);
+                }
+                if(!(sensorAccelerometer == null)&& !(data_2 == null)){
+                    DrawGraph2(data_2);
+                }
+
+                if(!(data_1 == null) || !(data_2 == null)){
+                    progressBar.setVisibility(View.INVISIBLE);
+                    llChart.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -149,13 +170,13 @@ public class MainFragment extends Fragment {
 
     private void Load_Data_from_DB(String SensorType, long TimeToStart, int Interval_Step){
         ArrayMap<Long, String> Query_Result;
-        xValue = new ArrayList<>();
-        yValue = new ArrayList<>();
-        zValue = new ArrayList<>();
+        List<Entry> xValue = new ArrayList<>();
+        List<Entry> yValue = new ArrayList<>();
+        List<Entry> zValue = new ArrayList<>();
         int counter = 0;
         Query_Result = mDbHelper_Graphs.Read_DBData_for_graphs(SensorType, TimeToStart, Interval_Step);
         if (Query_Result.size() > 0 && !Query_Result.valueAt(0).isEmpty()){
-            for (int i = 0; i<Query_Result.size(); i++){
+            for (int i = Query_Result.size() - 1; i >=0; i--){
                 String[] separated = new String[3];
                 String[] shared_request = Query_Result.valueAt(i).split(";");
                 for (int j = 0; j < 3; j++){
@@ -176,7 +197,7 @@ public class MainFragment extends Fragment {
     }
 
     private void FormatDataWithTreeValue (List<Entry> x_Value, List<Entry> y_Value, List<Entry> z_Value){
-        dataSets = new ArrayList<>();
+        ArrayList<ILineDataSet> dataSets = new ArrayList<>();
         LineDataSet dataSet = new LineDataSet(x_Value, "X");
         dataSet.setColors(ChartColor.CHARTLINE_COLORS[0]);
         dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[0]);
@@ -196,7 +217,8 @@ public class MainFragment extends Fragment {
     private void DrawGraph1(LineData data_1){
         data_1.setDrawValues(false);
         mChart_1.setDrawGridBackground(false);
-        mChart_1.getDescription().setEnabled(false);
+        mChart_2.getDescription().setEnabled(true);
+        mChart_2.getDescription().setText(getResources().getString(R.string.GYROSCOPE));
         mChart_1.setDrawBorders(true);
 
         mChart_1.getAxisLeft().setEnabled(true);
@@ -223,7 +245,8 @@ public class MainFragment extends Fragment {
     private void DrawGraph2(LineData data_2){
         data_2.setDrawValues(false);
         mChart_2.setDrawGridBackground(false);
-        mChart_2.getDescription().setEnabled(false);
+        mChart_2.getDescription().setEnabled(true);
+        mChart_2.getDescription().setText(getResources().getString(R.string.ACCELERATION));
         mChart_2.setDrawBorders(true);
 
         mChart_2.getAxisLeft().setEnabled(true);

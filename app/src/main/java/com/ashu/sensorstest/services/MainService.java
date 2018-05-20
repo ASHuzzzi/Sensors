@@ -32,12 +32,12 @@ public class MainService extends Service {
     private SensorManager sensorManagerService;
     private Sensor sensorGyroscope;
     private Sensor sensorAccelerometer;
-    ArrayList<String> arr_valuesGyroscope = new ArrayList<>();
-    ArrayList<String> arr_valuesAcceleration = new ArrayList<>();
+    private ArrayList<String> arr_valuesGyroscope = new ArrayList<>();
+    private ArrayList<String> arr_valuesAcceleration = new ArrayList<>();
 
     private NotificationManager notificationManager;
     public static final int DEFAULT_NOTIFICATION_ID = 101;
-    PowerManager.WakeLock mWakeLock;
+    private PowerManager.WakeLock mWakeLock;
 
     private ScheduledExecutorService schedule_Data_Processing;
     private ScheduledExecutorService schedule_Cleaning_of_databases;
@@ -67,7 +67,6 @@ public class MainService extends Service {
             Cleaning_of_databases();
         }
 
-        //Send Foreground Notification
         String text_fo_Notification_Up = getResources().getString(R.string.text_for_Notification) + ":";
         String text_fo_Notification_Down = " '"
                 + getResources().getString(R.string.ACCELERATION) + "' и '"
@@ -88,10 +87,8 @@ public class MainService extends Service {
         mDbHelper_Graphs.Close_DB_for_graphs();
         mDbHelper_Graphs.close();
 
-        //Removing any notifications
         notificationManager.cancel(DEFAULT_NOTIFICATION_ID);
 
-        //Disabling service
         stopSelf();
         super.onDestroy();
     }
