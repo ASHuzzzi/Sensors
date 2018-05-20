@@ -32,11 +32,12 @@ public class MainService extends Service {
     private SensorManager sensorManagerService;
     private Sensor sensorGyroscope;
     private Sensor sensorAccelerometer;
+
     private ArrayList<String> arr_valuesGyroscope = new ArrayList<>();
     private ArrayList<String> arr_valuesAcceleration = new ArrayList<>();
 
     private NotificationManager notificationManager;
-    public static final int DEFAULT_NOTIFICATION_ID = 101;
+    private static final int DEFAULT_NOTIFICATION_ID = 101;
     private PowerManager.WakeLock mWakeLock;
 
     private ScheduledExecutorService schedule_Data_Processing;
@@ -126,6 +127,9 @@ public class MainService extends Service {
         }
     };
 
+    /*
+        Каждую секунду мы берем массивы значений с датчиков и отправляем на обработку.
+     */
     private void Data_Processing() {
 
         schedule_Data_Processing = Executors.newScheduledThreadPool(1);
@@ -142,21 +146,28 @@ public class MainService extends Service {
         }, 0, 1, TimeUnit.SECONDS);
     }
 
-
+    /*
+        Массив данных, полученный от датчиков за секунду, мы отправляем на обработку.
+        Её результатом является строка, которая содержит среднее значения по трем осям датчиков
+        Эта строка записывается в БД которая хранит данные для построения графиков
+     */
     private void Processing_of_data_from_sensors(ArrayList<String> buffer_1, ArrayList<String> buffer_2) {
 
         long timenow = TakeTimeNow();
         String row_fot_writing;
 
         String sensor_type = getResources().getString(R.string.GYROSCOPE);
-        row_fot_writing = mSensors.Gyroscope(buffer_1);
-        mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
+        row_fot_writing = mSensors.Gyroscope(buffer_1); //отправиили массив, получили строку
+        mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing); //записали строку в БД
 
         sensor_type = getResources().getString(R.string.ACCELERATION);
         row_fot_writing = mSensors.Acceleration(buffer_2);
         mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
     }
 
+    /*
+        Дабы на захламлять базу, каждую минуту удаляем записи свыше 6 минут
+     */
     private void Cleaning_of_databases(){
 
         schedule_Cleaning_of_databases = Executors.newScheduledThreadPool(1);
@@ -167,18 +178,22 @@ public class MainService extends Service {
         }, 0, 1, TimeUnit.MINUTES);
     }
 
+    //метод отчистки базы
     private void Cleaner_DB(){
         long timenow = TakeTimeNow();
-        int Interval_Step_for_graphs = 360000; //в миллисекундах. За какой промежуток будем делать выборку
+        String st_Interval_Step = getResources().getString(R.string.stInterval_Step);
+        int Interval_Step_for_graphs = Integer.parseInt(st_Interval_Step) + 60000; //в миллисекундах. За какой промежуток будем делать удаление
         mDbHelper_Graphs.Clear_DB_for_graphs(timenow, Interval_Step_for_graphs);
     }
 
+    //метод получения времени в данный момент
     private long TakeTimeNow(){
         Calendar cal = Calendar.getInstance();
         return cal.getTimeInMillis();
     }
 
-    public void sendNotification(String Title, String Text) {
+    //создаем уведомление
+    private void sendNotification(String Title, String Text) {
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction(Intent.ACTION_MAIN);
@@ -200,10 +215,10 @@ public class MainService extends Service {
         startForeground(DEFAULT_NOTIFICATION_ID, notification);
     }
 
-    public void acquireWakeLock() {
+    //метод не позволяющий телефону уходить в режим сна
+    private void acquireWakeLock() {
         final PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         releaseWakeLock();
-        //Acquire new wake lock
         if (powerManager != null) {
             mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PARTIAL_WAKE_LOCK");
             mWakeLock.acquire(60*1000L /*1 minute*/);
@@ -211,7 +226,7 @@ public class MainService extends Service {
 
     }
 
-    public void releaseWakeLock() {
+    private void releaseWakeLock() {
         if (mWakeLock != null && mWakeLock.isHeld()) {
             mWakeLock.release();
             mWakeLock = null;

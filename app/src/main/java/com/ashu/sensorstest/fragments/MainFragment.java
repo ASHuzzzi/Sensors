@@ -1,25 +1,18 @@
 package com.ashu.sensorstest.fragments;
 
-import android.app.ActivityManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.util.ArrayMap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
-
 import com.ashu.sensorstest.R;
 import com.ashu.sensorstest.data.Data_for_graphsDBHelper;
-import com.ashu.sensorstest.services.MainService;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.Entry;
@@ -38,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import static android.content.Context.SENSOR_SERVICE;
 
-
 public class MainFragment extends Fragment {
 
     private Sensor sensorGyroscope;
@@ -52,35 +44,35 @@ public class MainFragment extends Fragment {
 
     private Data_for_graphsDBHelper mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
     private ScheduledExecutorService Schedule_Load_Data;
-    private SharedPreferences prefs = null;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
-
         this.setRetainInstance(true);
 
-        prefs = Objects.requireNonNull(getActivity()).getSharedPreferences("com.ashu.sensorstest", Context.MODE_PRIVATE);
-
-        Button stopp = v.findViewById(R.id.btnStop);
+        mChart_1 = v.findViewById(R.id.LineChart_1);
+        mChart_2 = v.findViewById(R.id.LineChart_2);
         progressBar = v.findViewById(R.id.progressBar);
         llChart = v.findViewById(R.id.llChart);
 
-        SensorManager sensorManagerService = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+        //проверяем наличие датчиков
+        SensorManager sensorManagerService = (SensorManager) Objects.requireNonNull(getActivity()).getSystemService(SENSOR_SERVICE);
         if (sensorManagerService != null) {
             sensorGyroscope = sensorManagerService.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             sensorAccelerometer = sensorManagerService.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         }
 
+        //проверяем наличие/создаем локальную БД
         mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
         mDbHelper_Graphs.createDataBase();
         mDbHelper_Graphs.openDataBase();
         mDbHelper_Graphs.close();
-        mChart_1 = v.findViewById(R.id.LineChart_1);
-        mChart_2 = v.findViewById(R.id.LineChart_2);
 
+
+        //оставил метод остановки сервиса чтобы не удалять каждый раз приложение.
+        /*Button stopp = v.findViewById(R.id."ButtonName");
         stopp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -89,7 +81,7 @@ public class MainFragment extends Fragment {
                 }
 
             }
-        });
+        });*/
 
         return v;
     }
@@ -97,10 +89,11 @@ public class MainFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (prefs.getBoolean("firstrun", true)) {
+
+        //при первом запуске прячем пустые графики и показываем прогресс бар
+        if (data == null){
             progressBar.setVisibility(View.VISIBLE);
             llChart.setVisibility(View.INVISIBLE);
-            prefs.edit().putBoolean("firstrun", false).apply();
         }
 
         Schedule_Load_Data = Executors.newScheduledThreadPool(1);
@@ -111,8 +104,10 @@ public class MainFragment extends Fragment {
                 LineData data2 = null;
                 Calendar cal = Calendar.getInstance();
                 long timenow = cal.getTimeInMillis();
-                int Interval_Step = 300000;
+                String st_Interval_Step = getResources().getString(R.string.stInterval_Step);
+                int Interval_Step = Integer.parseInt(st_Interval_Step);
 
+                //если датчик есть, то делаем запрос данных в БД
                 if(!(sensorGyroscope == null)){
                     Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
                     data1 = data;
@@ -128,12 +123,15 @@ public class MainFragment extends Fragment {
         }, 0, 1, TimeUnit.SECONDS);
 
     }
-    public void Drawing_Graphs(final LineData data_1, final LineData data_2) {
+
+    //Рисуем графики
+    private void Drawing_Graphs(final LineData data_1, final LineData data_2) {
 
         Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
             @Override
             public void run() {
 
+                //если есть датчик и данные для него, то запускаем настройку данных и отображения виджета
                 if (!(sensorGyroscope == null ) && !(data_1 == null)){
                     DrawGraph1(data_1);
                 }
@@ -141,6 +139,7 @@ public class MainFragment extends Fragment {
                     DrawGraph2(data_2);
                 }
 
+                //когда появились данные прячем прогресс бар и показываем графики
                 if(!(data_1 == null) || !(data_2 == null)){
                     progressBar.setVisibility(View.INVISIBLE);
                     llChart.setVisibility(View.VISIBLE);
@@ -153,39 +152,32 @@ public class MainFragment extends Fragment {
     public void onPause() {
         super.onPause();
         Schedule_Load_Data.shutdownNow();
-        mDbHelper_Graphs.close();
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) Objects.requireNonNull(getActivity()).getSystemService(Context.ACTIVITY_SERVICE);
-        if (manager != null) {
-            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (serviceClass.getName().equals(service.service.getClassName())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
+    //Получение данных из БД
     private void Load_Data_from_DB(String SensorType, long TimeToStart, int Interval_Step){
-        ArrayMap<Long, String> Query_Result;
+        ArrayList<String> Query_Result;
         List<Entry> xValue = new ArrayList<>();
         List<Entry> yValue = new ArrayList<>();
         List<Entry> zValue = new ArrayList<>();
-        int counter = 0;
+        int counter = 0; //сетчик секунд по оси абсцисс
+
+        /*
+            Делаем запрос в базу.
+            На выходе имеем массив строк.
+            Из каждой строки берутся значения для X Y и Z, которые записываются в
+            соответствующий массив
+         */
         Query_Result = mDbHelper_Graphs.Read_DBData_for_graphs(SensorType, TimeToStart, Interval_Step);
-        if (Query_Result.size() > 0 && !Query_Result.valueAt(0).isEmpty()){
+        if (Query_Result.size() > 0 && !Query_Result.get(0).isEmpty()){
             for (int i = Query_Result.size() - 1; i >=0; i--){
                 String[] separated = new String[3];
-                String[] shared_request = Query_Result.valueAt(i).split(";");
+                String[] shared_request = Query_Result.get(i).split(";");
                 for (int j = 0; j < 3; j++){
 
                     separated[j] = shared_request[j].replace(",", ".");
 
                 }
-
-                float timeee = Query_Result.keyAt(i);
 
                 xValue.add(new Entry(counter, Float.parseFloat(separated[0])));
                 yValue.add(new Entry(counter, Float.parseFloat(separated[1])));
@@ -196,29 +188,37 @@ public class MainFragment extends Fragment {
         }
     }
 
+    /*
+        Настраиваем линии для графиков
+     */
     private void FormatDataWithTreeValue (List<Entry> x_Value, List<Entry> y_Value, List<Entry> z_Value){
         ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-        LineDataSet dataSet = new LineDataSet(x_Value, "X");
-        dataSet.setColors(ChartColor.CHARTLINE_COLORS[0]);
-        dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[0]);
-        dataSets.add(dataSet);
+
+        LineDataSet dataSet = new LineDataSet(x_Value, "X"); //значения по Х
+        dataSet.setColors(ChartColor.CHARTLINE_COLORS[0]); //цвет линии
+        dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[0]); //цвет точек значений
+        dataSets.add(dataSet); //добавляем в массив графиков
+
         dataSet = new LineDataSet (y_Value, "Y");
         dataSet.setColors(ChartColor.CHARTLINE_COLORS[1]);
         dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[1]);
         dataSets.add(dataSet);
+
         dataSet = new LineDataSet(z_Value, "Z");
         dataSet.setColors(ChartColor.CHARTLINE_COLORS[2]);
         dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[2]);
         dataSets.add(dataSet);
+
         data = new LineData(dataSets);
         data.setDrawValues(false);
     }
 
+    //настраиваем сам элементы верхнего графика
     private void DrawGraph1(LineData data_1){
         data_1.setDrawValues(false);
         mChart_1.setDrawGridBackground(false);
-        mChart_2.getDescription().setEnabled(true);
-        mChart_2.getDescription().setText(getResources().getString(R.string.GYROSCOPE));
+        mChart_1.getDescription().setEnabled(true);
+        mChart_1.getDescription().setText(getResources().getString(R.string.GYROSCOPE));
         mChart_1.setDrawBorders(true);
 
         mChart_1.getAxisLeft().setEnabled(true);
@@ -226,10 +226,6 @@ public class MainFragment extends Fragment {
         mChart_1.getAxisRight().setDrawGridLines(false);
         mChart_1.getXAxis().setDrawAxisLine(false);
         mChart_1.getXAxis().setDrawGridLines(false);
-
-
-        //mChart_1.getXAxis().setValueFormatter(new HourAxisValueFormatter(0));
-        //mChart_1.getXAxis().setValueFormatter(new DefaultAxisValueFormatter(0));
         mChart_1.setData(data_1);
 
         Legend l1 = mChart_1.getLegend();
@@ -242,6 +238,7 @@ public class MainFragment extends Fragment {
         mChart_1.invalidate();
     }
 
+    //настраиваем сам элементы нижнего графика
     private void DrawGraph2(LineData data_2){
         data_2.setDrawValues(false);
         mChart_2.setDrawGridBackground(false);
@@ -254,9 +251,6 @@ public class MainFragment extends Fragment {
         mChart_2.getAxisRight().setDrawGridLines(false);
         mChart_2.getXAxis().setDrawAxisLine(false);
         mChart_2.getXAxis().setDrawGridLines(false);
-
-        //mChart_1.getXAxis().setValueFormatter(new HourAxisValueFormatter(0));
-        //mChart_1.getXAxis().setValueFormatter(new DefaultAxisValueFormatter(0));
         mChart_2.setData(data_2);
 
         Legend l2 = mChart_2.getLegend();
@@ -268,4 +262,19 @@ public class MainFragment extends Fragment {
         mChart_2.notifyDataSetChanged();
         mChart_2.invalidate();
     }
+
+    /*
+        Оставил на случай возвращения кнопки (или чего-нибудь еще) останавливающей сервис
+     */
+    /*private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) Objects.requireNonNull(getActivity()).getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager != null) {
+            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+                if (serviceClass.getName().equals(service.service.getClassName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }*/
 }

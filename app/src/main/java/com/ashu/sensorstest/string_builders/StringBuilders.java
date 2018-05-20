@@ -16,7 +16,7 @@ public class StringBuilders {
     private StringBuilder stringBuilder; //для преобразования данных в строку, для записи в БД
     private final String delimiter = ";"; //чтобы в обеих базах знак разделителя был один.
 
-    //работаем с данными полученными от датчиков сразу
+    //работает с данными, полученными от датчиков сразу
     public String BS_Data_from_sensors(float[] sensor_data){
         stringBuilder = new StringBuilder();
         for (float aSensor_data : sensor_data) {
@@ -26,7 +26,7 @@ public class StringBuilders {
         return String.valueOf(stringBuilder);
     }
 
-    // готови данные для записи в БД, которая потом используется для построения графиков
+    // готовит данные для записи в БД, которая потом используется для построения графиков
     public String BS_Data_for_graphs(ArrayList<Double> arr_result_of_work){
         stringBuilder = new StringBuilder();
         for (int i = 0; i < arr_result_of_work.size(); i++){

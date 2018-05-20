@@ -4,6 +4,9 @@ import android.graphics.Color;
 
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+/*
+Класс сожержаший массив цветов для кривых графиков
+ */
 public class ChartColor extends ColorTemplate {
 
     public static final int[] CHARTLINE_COLORS = {

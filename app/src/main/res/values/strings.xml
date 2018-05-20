@@ -1,13 +1,14 @@
 <resources>
     <string name="app_name">SensorsTest</string>
-    <string name="stop">Stop</string>
-
 
     <!-- Текст для уведомления -->
     <string name="text_for_Notification">Обработка данных с датчиков</string>
 
-    <!-- Датчики которые используются в приложении -->
+    <!-- Датчики, которые используются в приложении -->
     <string name="ACCELERATION">Акселерометр</string>
     <string name="GYROSCOPE">Гироскоп</string>
+
+    <!-- Время за которое строится график и за которое отчищается БД (в милисекундах) -->
+    <string name="stInterval_Step">300000</string>
 
 </resources>
