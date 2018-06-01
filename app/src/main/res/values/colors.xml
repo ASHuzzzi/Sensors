@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#1976d2</color>
     <color name="colorAccent">#448aff</color>
 
+    <color name="x_line">#009900</color>
+    <color name="y_line">#330fff</color>
+    <color name="z_line">#ff6600</color>
+
 </resources>

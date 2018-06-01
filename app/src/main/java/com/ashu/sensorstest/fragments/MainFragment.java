@@ -19,7 +19,6 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.ashu.sensorstest.chart.ChartColor;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -195,19 +194,20 @@ public class MainFragment extends Fragment {
         ArrayList<ILineDataSet> dataSets = new ArrayList<>();
 
         LineDataSet dataSet = new LineDataSet(x_Value, "X"); //значения по Х
-        dataSet.setColors(ChartColor.CHARTLINE_COLORS[0]); //цвет линии
-        dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[0]); //цвет точек значений
+        dataSet.setColor(getResources().getColor(R.color.x_line)); //цвет линии
+        dataSet.setCircleColors(getResources().getColor(R.color.x_line)); //цвет точек значений
         dataSets.add(dataSet); //добавляем в массив графиков
 
         dataSet = new LineDataSet (y_Value, "Y");
-        dataSet.setColors(ChartColor.CHARTLINE_COLORS[1]);
-        dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[1]);
+        dataSet.setColors(getResources().getColor(R.color.y_line));
+        dataSet.setCircleColors(getResources().getColor(R.color.y_line));
         dataSets.add(dataSet);
 
         dataSet = new LineDataSet(z_Value, "Z");
-        dataSet.setColors(ChartColor.CHARTLINE_COLORS[2]);
-        dataSet.setCircleColors(ChartColor.CHARTLINE_COLORS[2]);
+        dataSet.setColors(getResources().getColor(R.color.z_line));
+        dataSet.setCircleColors(getResources().getColor(R.color.z_line));
         dataSets.add(dataSet);
+
 
         data = new LineData(dataSets);
         data.setDrawValues(false);
