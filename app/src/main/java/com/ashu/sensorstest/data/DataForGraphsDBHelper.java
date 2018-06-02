@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.ashu.sensorstest.data.Data_for_graphsDBContract.DBDataCollection;
+import com.ashu.sensorstest.data.DataForGraphsDBContract.DBDataCollection;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,15 +17,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
+public class DataForGraphsDBHelper extends SQLiteOpenHelper {
     @SuppressLint("SdCardPath")
-    private final String DB_PATH = "/data/data/com.ashu.sensorstest/databases/";
-    private static String DB_NAME = "Data_for_graphs.db";
+    private final String stDBPath = "/data/data/com.ashu.sensorstest/databases/";
+    private static String stDBName = "Data_for_graphs.db";
     private SQLiteDatabase myDataBase;
     private final Context mContext;
 
-    public Data_for_graphsDBHelper(Context context) {
-        super(context, DB_NAME, null, 1);
+    public DataForGraphsDBHelper(Context context) {
+        super(context, stDBName, null, 1);
         this.mContext = context;
     }
 
@@ -54,7 +54,7 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
         SQLiteDatabase checkDB = null;
 
         try{
-            String myPath = DB_PATH + DB_NAME;
+            String myPath = stDBPath + stDBName;
             checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
         }catch(SQLiteException e){
             //база еще не существует
@@ -70,9 +70,9 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
      * Выполняется путем копирования потока байтов.
      * */
     private void copyDataBase() throws IOException{
-        InputStream myInput = mContext.getAssets().open("db/" + DB_NAME);
+        InputStream myInput = mContext.getAssets().open("db/" + stDBName);
 
-        String outFileName = DB_PATH + DB_NAME;
+        String outFileName = stDBPath + stDBName;
         OutputStream myOutput = new FileOutputStream(outFileName);
         byte[] buffer = new byte[1024];
         int length;
@@ -87,7 +87,7 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
 
     public void openDataBase() throws SQLException {
         //открываем БД
-        String myPath = DB_PATH + DB_NAME;
+        String myPath = stDBPath + stDBName;
         myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
     }
 
@@ -112,24 +112,24 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
         Запись в базу данных с датчиков
         На вход принимает тип датчика, время изменения, данные для этого периода времени
      */
-    public void Recording_Data_for_graphs(String SensorType, long TimeOfChange, String SensorData){
+    public void recordingDataForGraphs(String stSensorType, long lTimeOfChange, String stSensorData){
         myDataBase = this.getWritableDatabase();
         ContentValues newValues = new ContentValues();
 
-        newValues.put(DBDataCollection.Column_SensorType, SensorType);
-        newValues.put(DBDataCollection.Column_DataTime, TimeOfChange);
-        newValues.put(DBDataCollection.Column_SensorData, SensorData);
-        myDataBase.insert(DBDataCollection.TABLE_NAME, null, newValues);
+        newValues.put(DBDataCollection.stColumnSensorType, stSensorType);
+        newValues.put(DBDataCollection.stColumnDataTime, lTimeOfChange);
+        newValues.put(DBDataCollection.stColumnSensorData, stSensorData);
+        myDataBase.insert(DBDataCollection.stTableName, null, newValues);
     }
 
     //чтобы не захламлять БД, чистим ее каждую минуту от данных страше шесть минут с момента запуска
-    public void Clear_DB_for_graphs(long TimeOfChange, int Interval_Step){
+    public void clearDBForGraphs(long lTimeOfChange, int iIntervalStep){
         myDataBase = this.getWritableDatabase();
 
-        String selection = DBDataCollection.Column_DataTime + " < " + (TimeOfChange - Interval_Step);
+        String selection = DBDataCollection.stColumnDataTime + " < " + (lTimeOfChange - iIntervalStep);
 
         myDataBase.delete(
-                DBDataCollection.TABLE_NAME,
+                DBDataCollection.stTableName,
                 selection,
                 null
         );
@@ -140,21 +140,21 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
         На вход принимает тип датчика, время начала выборки, величину периода за который будет
         делаться выборка
      */
-    public ArrayList<String> Read_DBData_for_graphs(String SensorType, long TimeOfChange, int Interval_Step){
+    public ArrayList<String> readDBDataForGraphs(String stSensorType, long lTimeOfChange, int iInterval_Step){
         myDataBase = this.getReadableDatabase();
 
         Cursor cursor;
-        ArrayList<String> Query_Result = new ArrayList<>();
-        long begin_selection = TimeOfChange - Interval_Step;
+        ArrayList<String> arQueryResult = new ArrayList<>();
+        long lBeginSelection = lTimeOfChange - iInterval_Step;
 
-        String[] projection = {DBDataCollection.Column_SensorData};
+        String[] projection = {DBDataCollection.stColumnSensorData};
 
-        String selection = DBDataCollection.Column_SensorType + "= '" + SensorType + "' AND "
-                + DBDataCollection.Column_DataTime + " BETWEEN " + (begin_selection) + " AND "
-                + (TimeOfChange);
+        String selection = DBDataCollection.stColumnSensorType + "= '" + stSensorType + "' AND "
+                + DBDataCollection.stColumnDataTime + " BETWEEN " + (lBeginSelection) + " AND "
+                + (lTimeOfChange);
 
         cursor = myDataBase.query(
-                DBDataCollection.TABLE_NAME,
+                DBDataCollection.stTableName,
                 projection,
                 selection,
                 null,
@@ -165,12 +165,12 @@ public class Data_for_graphsDBHelper extends SQLiteOpenHelper {
 
         if (cursor !=null && cursor.moveToFirst()){
             do {
-                Query_Result.add(
-                        cursor.getString(cursor.getColumnIndex(DBDataCollection.Column_SensorData)));
+                arQueryResult.add(
+                        cursor.getString(cursor.getColumnIndex(DBDataCollection.stColumnSensorData)));
             }while (cursor.moveToNext());
             cursor.close();
         }
-        return Query_Result;
+        return arQueryResult;
     }
 
     public void Close_DB_for_graphs(){

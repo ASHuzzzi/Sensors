@@ -12,7 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import com.ashu.sensorstest.R;
-import com.ashu.sensorstest.data.Data_for_graphsDBHelper;
+import com.ashu.sensorstest.data.DataForGraphsDBHelper;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.Entry;
@@ -41,7 +41,7 @@ public class MainFragment extends Fragment {
     private LinearLayout llChart;
     private LineData data;
 
-    private Data_for_graphsDBHelper mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
+    private DataForGraphsDBHelper mDbHelper_Graphs = new DataForGraphsDBHelper(getContext());
     private ScheduledExecutorService Schedule_Load_Data;
 
     @Override
@@ -64,7 +64,7 @@ public class MainFragment extends Fragment {
         }
 
         //проверяем наличие/создаем локальную БД
-        mDbHelper_Graphs = new Data_for_graphsDBHelper(getContext());
+        mDbHelper_Graphs = new DataForGraphsDBHelper(getContext());
         mDbHelper_Graphs.createDataBase();
         mDbHelper_Graphs.openDataBase();
         mDbHelper_Graphs.close();
@@ -167,7 +167,7 @@ public class MainFragment extends Fragment {
             Из каждой строки берутся значения для X Y и Z, которые записываются в
             соответствующий массив
          */
-        Query_Result = mDbHelper_Graphs.Read_DBData_for_graphs(SensorType, TimeToStart, Interval_Step);
+        Query_Result = mDbHelper_Graphs.readDBDataForGraphs(SensorType, TimeToStart, Interval_Step);
         if (Query_Result.size() > 0 && !Query_Result.get(0).isEmpty()){
             for (int i = Query_Result.size() - 1; i >=0; i--){
                 String[] separated = new String[3];

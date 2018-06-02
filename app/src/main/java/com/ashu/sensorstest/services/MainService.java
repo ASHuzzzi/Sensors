@@ -17,7 +17,7 @@ import android.support.v4.app.NotificationCompat;
 
 import com.ashu.sensorstest.MainActivity;
 import com.ashu.sensorstest.R;
-import com.ashu.sensorstest.data.Data_for_graphsDBHelper;
+import com.ashu.sensorstest.data.DataForGraphsDBHelper;
 import com.ashu.sensorstest.sensors.Sensors;
 import com.ashu.sensorstest.string_builders.StringBuilders;
 
@@ -44,7 +44,7 @@ public class MainService extends Service {
     private ScheduledExecutorService schedule_Data_Processing;
     private ScheduledExecutorService schedule_Cleaning_of_databases;
 
-    private Data_for_graphsDBHelper mDbHelper_Graphs = new Data_for_graphsDBHelper(this);
+    private DataForGraphsDBHelper mDbHelper_Graphs = new DataForGraphsDBHelper(this);
 
     private Sensors mSensors = new Sensors();
     private StringBuilders mStringBuilder = new StringBuilders();
@@ -159,11 +159,11 @@ public class MainService extends Service {
 
         String sensor_type = getResources().getString(R.string.GYROSCOPE);
         row_fot_writing = mSensors.Gyroscope(buffer_1); //отправиили массив, получили строку
-        mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing); //записали строку в БД
+        mDbHelper_Graphs.recordingDataForGraphs(sensor_type, timenow, row_fot_writing); //записали строку в БД
 
         sensor_type = getResources().getString(R.string.ACCELERATION);
         row_fot_writing = mSensors.Acceleration(buffer_2);
-        mDbHelper_Graphs.Recording_Data_for_graphs(sensor_type, timenow, row_fot_writing);
+        mDbHelper_Graphs.recordingDataForGraphs(sensor_type, timenow, row_fot_writing);
     }
 
     /*
@@ -184,7 +184,7 @@ public class MainService extends Service {
         long timenow = TakeTimeNow();
         String st_Interval_Step = getResources().getString(R.string.stInterval_Step);
         int Interval_Step_for_graphs = Integer.parseInt(st_Interval_Step) + 60000; //в миллисекундах. За какой промежуток будем делать удаление
-        mDbHelper_Graphs.Clear_DB_for_graphs(timenow, Interval_Step_for_graphs);
+        mDbHelper_Graphs.clearDBForGraphs(timenow, Interval_Step_for_graphs);
     }
 
     //метод получения времени в данный момент
