@@ -19,14 +19,14 @@
         android:orientation="horizontal">
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/LineChart_1"
+            android:id="@+id/lineChart1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/LineChart_2"
+            android:id="@+id/lineChart2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"

@@ -34,17 +34,17 @@ public class MainService extends Service {
     private Sensor sensorGyroscope;
     private Sensor sensorAccelerometer;
 
-    private ArrayList<String> arr_valuesGyroscope = new ArrayList<>();
-    private ArrayList<String> arr_valuesAcceleration = new ArrayList<>();
+    private ArrayList<String> arrValuesGyroscope = new ArrayList<>();
+    private ArrayList<String> arrValuesAcceleration = new ArrayList<>();
 
     private NotificationManager notificationManager;
-    private static final int DEFAULT_NOTIFICATION_ID = 101;
+    private static final int iDefaultNotificationId = 101;
     private PowerManager.WakeLock mWakeLock;
 
-    private ScheduledExecutorService schedule_Data_Processing;
-    private ScheduledExecutorService schedule_Cleaning_of_databases;
+    private ScheduledExecutorService scheduleDataProcessing;
+    private ScheduledExecutorService scheduleCleaningOfDatabases;
 
-    private DataForGraphsDBHelper mDbHelper_Graphs = new DataForGraphsDBHelper(this);
+    private DataForGraphsDBHelper mDbHelperGraphs = new DataForGraphsDBHelper(this);
 
     private Sensors mSensors = new Sensors();
     private StringBuilders mStringBuilder = new StringBuilders();
@@ -65,15 +65,15 @@ public class MainService extends Service {
         if (sensorManagerService != null) {
             sensorManagerService.registerListener(listener, sensorGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
             sensorManagerService.registerListener(listener, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            Data_Processing();
-            Cleaning_of_databases();
+            dataProcessing();
+            cleaningOfDatabases();
         }
 
-        String text_fo_Notification_Up = getResources().getString(R.string.text_for_Notification) + ":";
-        String text_fo_Notification_Down = " '"
-                + getResources().getString(R.string.ACCELERATION) + "' и '"
-                + getResources().getString(R.string.GYROSCOPE) + "'";
-        sendNotification(text_fo_Notification_Up, text_fo_Notification_Down);
+        String textFoNotificationUp = getResources().getString(R.string.stTextForNotification) + ":";
+        String textFoNotificationDown = " '"
+                + getResources().getString(R.string.stAcceleration) + "' и '"
+                + getResources().getString(R.string.stGyroscope) + "'";
+        sendNotification(textFoNotificationUp, textFoNotificationDown);
 
         return START_REDELIVER_INTENT;
     }
@@ -83,13 +83,13 @@ public class MainService extends Service {
         if (sensorManagerService != null) {
             sensorManagerService.unregisterListener(listener);
         }
-        schedule_Data_Processing.shutdownNow();
-        schedule_Cleaning_of_databases.shutdownNow();
+        scheduleDataProcessing.shutdownNow();
+        scheduleCleaningOfDatabases.shutdownNow();
 
-        mDbHelper_Graphs.Close_DB_for_graphs();
-        mDbHelper_Graphs.close();
+        mDbHelperGraphs.Close_DB_for_graphs();
+        mDbHelperGraphs.close();
 
-        notificationManager.cancel(DEFAULT_NOTIFICATION_ID);
+        notificationManager.cancel(iDefaultNotificationId);
 
         stopSelf();
         super.onDestroy();
@@ -111,18 +111,18 @@ public class MainService extends Service {
 
             float[] valuesGyroscope = new float[3];
             float[] valuesAcceleration = new float[3];
-            String finished_line;
+            String stfinishedLine;
 
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_GYROSCOPE:
                     System.arraycopy(event.values, 0, valuesGyroscope, 0, 3);
-                    finished_line = mStringBuilder.BS_Data_from_sensors(valuesGyroscope);
-                    arr_valuesGyroscope.add(finished_line);
+                    stfinishedLine = mStringBuilder.bsDataFromSensors(valuesGyroscope);
+                    arrValuesGyroscope.add(stfinishedLine);
                     break;
                 case Sensor.TYPE_LINEAR_ACCELERATION:
                     System.arraycopy(event.values, 0, valuesAcceleration, 0, 3);
-                    finished_line = mStringBuilder.BS_Data_from_sensors(valuesAcceleration);
-                    arr_valuesAcceleration.add(finished_line);
+                    stfinishedLine = mStringBuilder.bsDataFromSensors(valuesAcceleration);
+                    arrValuesAcceleration.add(stfinishedLine);
                     break;
             }
         }
@@ -131,18 +131,18 @@ public class MainService extends Service {
     /*
         Каждую секунду мы берем массивы значений с датчиков и отправляем на обработку.
      */
-    private void Data_Processing() {
+    private void dataProcessing() {
 
-        schedule_Data_Processing = Executors.newScheduledThreadPool(1);
-        schedule_Data_Processing.scheduleAtFixedRate(new Runnable() {
+        scheduleDataProcessing = Executors.newScheduledThreadPool(1);
+        scheduleDataProcessing.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 acquireWakeLock();
 
-                ArrayList<String> Buffer_1 = new ArrayList<>(arr_valuesGyroscope);
-                ArrayList<String> Buffer_2 = new ArrayList<>( arr_valuesAcceleration);
-                arr_valuesGyroscope.clear();
-                arr_valuesAcceleration.clear();
-                Processing_of_data_from_sensors(Buffer_1, Buffer_2);
+                ArrayList<String> arBuffer1 = new ArrayList<>(arrValuesGyroscope);
+                ArrayList<String> arBuffer2 = new ArrayList<>(arrValuesAcceleration);
+                arrValuesGyroscope.clear();
+                arrValuesAcceleration.clear();
+                processingOfDataFromSensors(arBuffer1, arBuffer2);
             }
         }, 0, 1, TimeUnit.SECONDS);
     }
@@ -152,60 +152,60 @@ public class MainService extends Service {
         Её результатом является строка, которая содержит среднее значения по трем осям датчиков
         Эта строка записывается в БД которая хранит данные для построения графиков
      */
-    private void Processing_of_data_from_sensors(ArrayList<String> buffer_1, ArrayList<String> buffer_2) {
+    private void processingOfDataFromSensors(ArrayList<String> arbBuffer1, ArrayList<String> arBuffer2) {
 
-        long timenow = TakeTimeNow();
-        String row_fot_writing;
+        long lTimeNow = takeTimeNow();
+        String stRowFotWriting;
 
-        String sensor_type = getResources().getString(R.string.GYROSCOPE);
-        row_fot_writing = mSensors.Gyroscope(buffer_1); //отправиили массив, получили строку
-        mDbHelper_Graphs.recordingDataForGraphs(sensor_type, timenow, row_fot_writing); //записали строку в БД
+        String stSensorType = getResources().getString(R.string.stGyroscope);
+        stRowFotWriting = mSensors.gyroscope(arbBuffer1); //отправиили массив, получили строку
+        mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting); //записали строку в БД
 
-        sensor_type = getResources().getString(R.string.ACCELERATION);
-        row_fot_writing = mSensors.Acceleration(buffer_2);
-        mDbHelper_Graphs.recordingDataForGraphs(sensor_type, timenow, row_fot_writing);
+        stSensorType = getResources().getString(R.string.stAcceleration);
+        stRowFotWriting = mSensors.acceleration(arBuffer2);
+        mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting);
     }
 
     /*
         Дабы на захламлять базу, каждую минуту удаляем записи свыше 6 минут
      */
-    private void Cleaning_of_databases(){
+    private void cleaningOfDatabases(){
 
-        schedule_Cleaning_of_databases = Executors.newScheduledThreadPool(1);
-        schedule_Cleaning_of_databases.scheduleAtFixedRate(new Runnable() {
+        scheduleCleaningOfDatabases = Executors.newScheduledThreadPool(1);
+        scheduleCleaningOfDatabases.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                Cleaner_DB();
+                cleanerDB();
             }
         }, 0, 1, TimeUnit.MINUTES);
     }
 
     //метод отчистки базы
-    private void Cleaner_DB(){
-        long timenow = TakeTimeNow();
-        String st_Interval_Step = getResources().getString(R.string.stInterval_Step);
-        int Interval_Step_for_graphs = Integer.parseInt(st_Interval_Step) + 60000; //в миллисекундах. За какой промежуток будем делать удаление
-        mDbHelper_Graphs.clearDBForGraphs(timenow, Interval_Step_for_graphs);
+    private void cleanerDB(){
+        long lTimeNow = takeTimeNow();
+        String stIntervalStep = getResources().getString(R.string.stIntervalStep);
+        int iIntervalStepForGraphs = Integer.parseInt(stIntervalStep) + 60000; //в миллисекундах. За какой промежуток будем делать удаление
+        mDbHelperGraphs.clearDBForGraphs(lTimeNow, iIntervalStepForGraphs);
     }
 
     //метод получения времени в данный момент
-    private long TakeTimeNow(){
+    private long takeTimeNow(){
         Calendar cal = Calendar.getInstance();
         return cal.getTimeInMillis();
     }
 
     //создаем уведомление
-    private void sendNotification(String Title, String Text) {
+    private void sendNotification(String stTitle, String stText) {
 
-        String channel_Id = getResources().getString(R.string.st_name);
+        String stChannelId = getResources().getString(R.string.stChannelName);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
 
 
-            CharSequence name = getResources().getString(R.string.st_name);
-            String Description = getResources().getString(R.string.st_description);
+            CharSequence chName = getResources().getString(R.string.stChannelName);
+            String stDescription = getResources().getString(R.string.stChannelDescription);
             int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel mChannel = new NotificationChannel(channel_Id, name, importance);
-            mChannel.setDescription(Description);
+            NotificationChannel mChannel = new NotificationChannel(stChannelId, chName, importance);
+            mChannel.setDescription(stDescription);
             notificationManager.createNotificationChannel(mChannel);
 
         }
@@ -216,18 +216,18 @@ public class MainService extends Service {
 
         PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channel_Id);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, stChannelId);
         builder.setContentIntent(contentIntent)
                 .setOngoing(true)   //Запретить "смахивание"
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(Title) //Заголовок
-                .setContentText(Text) // Текст уведомления
+                .setContentTitle(stTitle) //Заголовок
+                .setContentText(stText) // Текст уведомления
                 .setWhen(System.currentTimeMillis());
 
         Notification notification;
         notification = builder.build();
 
-        startForeground(DEFAULT_NOTIFICATION_ID, notification);
+        startForeground(iDefaultNotificationId, notification);
     }
 
     //метод не позволяющий телефону уходить в режим сна

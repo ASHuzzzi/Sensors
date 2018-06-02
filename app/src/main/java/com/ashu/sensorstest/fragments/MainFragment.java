@@ -35,14 +35,14 @@ public class MainFragment extends Fragment {
     private Sensor sensorGyroscope;
     private Sensor sensorAccelerometer;
 
-    private LineChart mChart_1;
-    private LineChart mChart_2;
+    private LineChart mChart1;
+    private LineChart mChart2;
     private ProgressBar progressBar;
     private LinearLayout llChart;
     private LineData data;
 
-    private DataForGraphsDBHelper mDbHelper_Graphs = new DataForGraphsDBHelper(getContext());
-    private ScheduledExecutorService Schedule_Load_Data;
+    private DataForGraphsDBHelper mDBHelperGraphs = new DataForGraphsDBHelper(getContext());
+    private ScheduledExecutorService scheduleLoadData;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -51,8 +51,8 @@ public class MainFragment extends Fragment {
 
         this.setRetainInstance(true);
 
-        mChart_1 = v.findViewById(R.id.LineChart_1);
-        mChart_2 = v.findViewById(R.id.LineChart_2);
+        mChart1 = v.findViewById(R.id.lineChart1);
+        mChart2 = v.findViewById(R.id.lineChart2);
         progressBar = v.findViewById(R.id.progressBar);
         llChart = v.findViewById(R.id.llChart);
 
@@ -64,10 +64,10 @@ public class MainFragment extends Fragment {
         }
 
         //проверяем наличие/создаем локальную БД
-        mDbHelper_Graphs = new DataForGraphsDBHelper(getContext());
-        mDbHelper_Graphs.createDataBase();
-        mDbHelper_Graphs.openDataBase();
-        mDbHelper_Graphs.close();
+        mDBHelperGraphs = new DataForGraphsDBHelper(getContext());
+        mDBHelperGraphs.createDataBase();
+        mDBHelperGraphs.openDataBase();
+        mDBHelperGraphs.close();
 
 
         //оставил метод остановки сервиса чтобы не удалять каждый раз приложение.
@@ -95,51 +95,51 @@ public class MainFragment extends Fragment {
             llChart.setVisibility(View.INVISIBLE);
         }
 
-        Schedule_Load_Data = Executors.newScheduledThreadPool(1);
-        Schedule_Load_Data.scheduleAtFixedRate(new Runnable() {
+        scheduleLoadData = Executors.newScheduledThreadPool(1);
+        scheduleLoadData.scheduleAtFixedRate(new Runnable() {
             public void run(){
 
                 LineData data1 = null;
                 LineData data2 = null;
                 Calendar cal = Calendar.getInstance();
                 long timenow = cal.getTimeInMillis();
-                String st_Interval_Step = getResources().getString(R.string.stInterval_Step);
-                int Interval_Step = Integer.parseInt(st_Interval_Step);
+                String stIntervalStep = getResources().getString(R.string.stIntervalStep);
+                int iIntervalStep = Integer.parseInt(stIntervalStep);
 
                 //если датчик есть, то делаем запрос данных в БД
                 if(!(sensorGyroscope == null)){
-                    Load_Data_from_DB(getResources().getString(R.string.GYROSCOPE), timenow, Interval_Step);
+                    loadDataFromDB(getResources().getString(R.string.stGyroscope), timenow, iIntervalStep);
                     data1 = data;
                 }
 
                 if (!(sensorAccelerometer == null)){
-                    Load_Data_from_DB(getResources().getString(R.string.ACCELERATION), timenow, Interval_Step);
+                    loadDataFromDB(getResources().getString(R.string.stAcceleration), timenow, iIntervalStep);
                     data2 = data;
                 }
 
-                Drawing_Graphs(data1, data2);
+                drawingGraphs(data1, data2);
             }
         }, 0, 1, TimeUnit.SECONDS);
 
     }
 
     //Рисуем графики
-    private void Drawing_Graphs(final LineData data_1, final LineData data_2) {
+    private void drawingGraphs(final LineData data1, final LineData data2) {
 
         Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
             @Override
             public void run() {
 
                 //если есть датчик и данные для него, то запускаем настройку данных и отображения виджета
-                if (!(sensorGyroscope == null ) && !(data_1 == null)){
-                    DrawGraph1(data_1);
+                if (!(sensorGyroscope == null ) && !(data1 == null)){
+                    drawGraph1(data1);
                 }
-                if(!(sensorAccelerometer == null)&& !(data_2 == null)){
-                    DrawGraph2(data_2);
+                if(!(sensorAccelerometer == null)&& !(data2 == null)){
+                    drawGraph2(data2);
                 }
 
                 //когда появились данные прячем прогресс бар и показываем графики
-                if(!(data_1 == null) || !(data_2 == null)){
+                if(!(data1 == null) || !(data2 == null)){
                     progressBar.setVisibility(View.INVISIBLE);
                     llChart.setVisibility(View.VISIBLE);
                 }
@@ -150,12 +150,12 @@ public class MainFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Schedule_Load_Data.shutdownNow();
+        scheduleLoadData.shutdownNow();
     }
 
     //Получение данных из БД
-    private void Load_Data_from_DB(String SensorType, long TimeToStart, int Interval_Step){
-        ArrayList<String> Query_Result;
+    private void loadDataFromDB(String stSensorType, long lTimeToStart, int iIntervalStep){
+        ArrayList<String> arQueryResult;
         List<Entry> xValue = new ArrayList<>();
         List<Entry> yValue = new ArrayList<>();
         List<Entry> zValue = new ArrayList<>();
@@ -167,14 +167,14 @@ public class MainFragment extends Fragment {
             Из каждой строки берутся значения для X Y и Z, которые записываются в
             соответствующий массив
          */
-        Query_Result = mDbHelper_Graphs.readDBDataForGraphs(SensorType, TimeToStart, Interval_Step);
-        if (Query_Result.size() > 0 && !Query_Result.get(0).isEmpty()){
-            for (int i = Query_Result.size() - 1; i >=0; i--){
+        arQueryResult = mDBHelperGraphs.readDBDataForGraphs(stSensorType, lTimeToStart, iIntervalStep);
+        if (arQueryResult.size() > 0 && !arQueryResult.get(0).isEmpty()){
+            for (int i = arQueryResult.size() - 1; i >=0; i--){
                 String[] separated = new String[3];
-                String[] shared_request = Query_Result.get(i).split(";");
+                String[] sharedRequest = arQueryResult.get(i).split(";");
                 for (int j = 0; j < 3; j++){
 
-                    separated[j] = shared_request[j].replace(",", ".");
+                    separated[j] = sharedRequest[j].replace(",", ".");
 
                 }
 
@@ -183,29 +183,29 @@ public class MainFragment extends Fragment {
                 zValue.add(new Entry(counter, Float.parseFloat(separated[2])));
                 counter++;
             }
-            FormatDataWithTreeValue(xValue, yValue, zValue);
+            formatDataWithTreeValue(xValue, yValue, zValue);
         }
     }
 
     /*
         Настраиваем линии для графиков
      */
-    private void FormatDataWithTreeValue (List<Entry> x_Value, List<Entry> y_Value, List<Entry> z_Value){
+    private void formatDataWithTreeValue(List<Entry> listXValue, List<Entry> listYValue, List<Entry> listZValue){
         ArrayList<ILineDataSet> dataSets = new ArrayList<>();
 
-        LineDataSet dataSet = new LineDataSet(x_Value, "X"); //значения по Х
-        dataSet.setColor(getResources().getColor(R.color.x_line)); //цвет линии
-        dataSet.setCircleColors(getResources().getColor(R.color.x_line)); //цвет точек значений
+        LineDataSet dataSet = new LineDataSet(listXValue, "X"); //значения по Х
+        dataSet.setColor(getResources().getColor(R.color.colorXLine)); //цвет линии
+        dataSet.setCircleColors(getResources().getColor(R.color.colorXLine)); //цвет точек значений
         dataSets.add(dataSet); //добавляем в массив графиков
 
-        dataSet = new LineDataSet (y_Value, "Y");
-        dataSet.setColors(getResources().getColor(R.color.y_line));
-        dataSet.setCircleColors(getResources().getColor(R.color.y_line));
+        dataSet = new LineDataSet (listYValue, "Y");
+        dataSet.setColors(getResources().getColor(R.color.colorYLine));
+        dataSet.setCircleColors(getResources().getColor(R.color.colorYLine));
         dataSets.add(dataSet);
 
-        dataSet = new LineDataSet(z_Value, "Z");
-        dataSet.setColors(getResources().getColor(R.color.z_line));
-        dataSet.setCircleColors(getResources().getColor(R.color.z_line));
+        dataSet = new LineDataSet(listZValue, "Z");
+        dataSet.setColors(getResources().getColor(R.color.colorZLine));
+        dataSet.setCircleColors(getResources().getColor(R.color.colorZLine));
         dataSets.add(dataSet);
 
 
@@ -214,53 +214,53 @@ public class MainFragment extends Fragment {
     }
 
     //настраиваем сам элементы верхнего графика
-    private void DrawGraph1(LineData data_1){
-        data_1.setDrawValues(false);
-        mChart_1.setDrawGridBackground(false);
-        mChart_1.getDescription().setEnabled(true);
-        mChart_1.getDescription().setText(getResources().getString(R.string.GYROSCOPE));
-        mChart_1.setDrawBorders(true);
+    private void drawGraph1(LineData data1){
+        data1.setDrawValues(false);
+        mChart1.setDrawGridBackground(false);
+        mChart1.getDescription().setEnabled(true);
+        mChart1.getDescription().setText(getResources().getString(R.string.stGyroscope));
+        mChart1.setDrawBorders(true);
 
-        mChart_1.getAxisLeft().setEnabled(true);
-        mChart_1.getAxisRight().setDrawAxisLine(false);
-        mChart_1.getAxisRight().setDrawGridLines(false);
-        mChart_1.getXAxis().setDrawAxisLine(false);
-        mChart_1.getXAxis().setDrawGridLines(false);
-        mChart_1.setData(data_1);
+        mChart1.getAxisLeft().setEnabled(true);
+        mChart1.getAxisRight().setDrawAxisLine(false);
+        mChart1.getAxisRight().setDrawGridLines(false);
+        mChart1.getXAxis().setDrawAxisLine(false);
+        mChart1.getXAxis().setDrawGridLines(false);
+        mChart1.setData(data1);
 
-        Legend l1 = mChart_1.getLegend();
+        Legend l1 = mChart1.getLegend();
         l1.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l1.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         l1.setOrientation(Legend.LegendOrientation.HORIZONTAL);
         l1.setDrawInside(false);
 
-        mChart_1.notifyDataSetChanged();
-        mChart_1.invalidate();
+        mChart1.notifyDataSetChanged();
+        mChart1.invalidate();
     }
 
     //настраиваем сам элементы нижнего графика
-    private void DrawGraph2(LineData data_2){
-        data_2.setDrawValues(false);
-        mChart_2.setDrawGridBackground(false);
-        mChart_2.getDescription().setEnabled(true);
-        mChart_2.getDescription().setText(getResources().getString(R.string.ACCELERATION));
-        mChart_2.setDrawBorders(true);
+    private void drawGraph2(LineData data2){
+        data2.setDrawValues(false);
+        mChart2.setDrawGridBackground(false);
+        mChart2.getDescription().setEnabled(true);
+        mChart2.getDescription().setText(getResources().getString(R.string.stAcceleration));
+        mChart2.setDrawBorders(true);
 
-        mChart_2.getAxisLeft().setEnabled(true);
-        mChart_2.getAxisRight().setDrawAxisLine(false);
-        mChart_2.getAxisRight().setDrawGridLines(false);
-        mChart_2.getXAxis().setDrawAxisLine(false);
-        mChart_2.getXAxis().setDrawGridLines(false);
-        mChart_2.setData(data_2);
+        mChart2.getAxisLeft().setEnabled(true);
+        mChart2.getAxisRight().setDrawAxisLine(false);
+        mChart2.getAxisRight().setDrawGridLines(false);
+        mChart2.getXAxis().setDrawAxisLine(false);
+        mChart2.getXAxis().setDrawGridLines(false);
+        mChart2.setData(data2);
 
-        Legend l2 = mChart_2.getLegend();
+        Legend l2 = mChart2.getLegend();
         l2.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l2.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         l2.setOrientation(Legend.LegendOrientation.HORIZONTAL);
         l2.setDrawInside(false);
 
-        mChart_2.notifyDataSetChanged();
-        mChart_2.invalidate();
+        mChart2.notifyDataSetChanged();
+        mChart2.invalidate();
     }
 
     /*

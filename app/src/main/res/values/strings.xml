@@ -1,18 +1,18 @@
 <resources>
-    <string name="app_name">SensorsTest</string>
+    <string name="appName">SensorsTest</string>
 
     <!-- Значения для уведомления -->
-    <string name="text_for_Notification">Обработка данных с датчиков</string>
-    <string name="st_channel_id">my_channel_id_01</string>
-    <string name="st_name">my_channel</string>
-    <string name="st_description">This is my channel</string>
+    <string name="stTextForNotification">Обработка данных с датчиков</string>
+    <string name="stChannelId">my_channel_id_01</string>
+    <string name="stChannelName">my_channel</string>
+    <string name="stChannelDescription">This is my channel</string>
 
     <!-- Датчики, которые используются в приложении -->
-    <string name="ACCELERATION">Акселерометр</string>
-    <string name="GYROSCOPE">Гироскоп</string>
+    <string name="stAcceleration">Акселерометр</string>
+    <string name="stGyroscope">Гироскоп</string>
 
     <!-- Время за которое строится график и за которое отчищается БД (в милисекундах) -->
-    <string name="stInterval_Step">300000</string>
+    <string name="stIntervalStep">300000</string>
 
 
 

@@ -17,10 +17,10 @@ import java.util.ArrayList;
  */
 public class Sensors {
 
-    private double[] x_value;
-    private double[] y_value;
-    private double[] z_value;
-    private ArrayList<Double> result_of_work;
+    private double[] dXValue;
+    private double[] dYValue;
+    private double[] dZValue;
+    private ArrayList<Double> arResultOfWork;
     private StringBuilders stringBuilder = new StringBuilders();
 
 
@@ -28,7 +28,7 @@ public class Sensors {
         System.loadLibrary("native-lib");
     }
 
-    public native double CountAVR(double[] x_value);
+    public native double countAVR(double[] dXValue);
 
 
     /*
@@ -38,77 +38,77 @@ public class Sensors {
         На выходе после каждой обработки имеем 1 одно среднее значение для соотвествующей оси.
         Три полученных значения собираем в строку.
      */
-    public String Acceleration(ArrayList<String> arr_value){
-        x_value = new double[arr_value.size()];
-        y_value = new double[arr_value.size()];
-        z_value = new double[arr_value.size()];
-        result_of_work = new ArrayList<>();
-        for (int i = 0; i<arr_value.size(); i++){
+    public String acceleration(ArrayList<String> arrValue){
+        dXValue = new double[arrValue.size()];
+        dYValue = new double[arrValue.size()];
+        dZValue = new double[arrValue.size()];
+        arResultOfWork = new ArrayList<>();
+        for (int i = 0; i<arrValue.size(); i++){
             String[] separated = new String[3];
-            String[] shared_request = arr_value.get(i).split(";");
+            String[] sharedRequest = arrValue.get(i).split(";");
             for (int j = 0; j < 3; j++){
 
-                separated[j] = shared_request[j].replace(",", ".");
+                separated[j] = sharedRequest[j].replace(",", ".");
 
             }
-            x_value[i] = Double.parseDouble(separated[0]);
-            y_value[i] = Double.parseDouble(separated[1]);
-            z_value[i] = Double.parseDouble(separated[2]);
+            dXValue[i] = Double.parseDouble(separated[0]);
+            dYValue[i] = Double.parseDouble(separated[1]);
+            dZValue[i] = Double.parseDouble(separated[2]);
 
         }
-        if(Double.isNaN(CountAVR(x_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dXValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(x_value));
+            arResultOfWork.add(countAVR(dXValue));
         }
-        if(Double.isNaN(CountAVR(y_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dYValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(y_value));
+            arResultOfWork.add(countAVR(dYValue));
         }
-        if(Double.isNaN(CountAVR(z_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dZValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(z_value));
+            arResultOfWork.add(countAVR(dZValue));
         }
 
-        return stringBuilder.BS_Data_for_graphs(result_of_work);
+        return stringBuilder.bsDataForGraphs(arResultOfWork);
     }
 
-    public String Gyroscope (ArrayList<String> arr_value){
-        x_value = new double[arr_value.size()];
-        y_value = new double[arr_value.size()];
-        z_value = new double[arr_value.size()];
-        result_of_work = new ArrayList<>();
-        for (int i = 0; i<arr_value.size(); i++){
+    public String gyroscope(ArrayList<String> arrValue){
+        dXValue = new double[arrValue.size()];
+        dYValue = new double[arrValue.size()];
+        dZValue = new double[arrValue.size()];
+        arResultOfWork = new ArrayList<>();
+        for (int i = 0; i<arrValue.size(); i++){
             String[] separated = new String[3];
-            String[] shared_request = arr_value.get(i).split(";");
+            String[] sharedRequest = arrValue.get(i).split(";");
             for (int j = 0; j < 3; j++){
 
-                separated[j] = shared_request[j].replace(",", ".");
+                separated[j] = sharedRequest[j].replace(",", ".");
 
             }
-            x_value[i] = Double.parseDouble(separated[0]);
-            y_value[i] = Double.parseDouble(separated[1]);
-            z_value[i] = Double.parseDouble(separated[2]);
+            dXValue[i] = Double.parseDouble(separated[0]);
+            dYValue[i] = Double.parseDouble(separated[1]);
+            dZValue[i] = Double.parseDouble(separated[2]);
 
         }
-        if(Double.isNaN(CountAVR(x_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dXValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(x_value));
+            arResultOfWork.add(countAVR(dXValue));
         }
-        if(Double.isNaN(CountAVR(y_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dYValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(y_value));
+            arResultOfWork.add(countAVR(dYValue));
         }
-        if(Double.isNaN(CountAVR(z_value))){
-            result_of_work.add(0.0);
+        if(Double.isNaN(countAVR(dZValue))){
+            arResultOfWork.add(0.0);
         }else{
-            result_of_work.add(CountAVR(z_value));
+            arResultOfWork.add(countAVR(dZValue));
         }
 
-        return stringBuilder.BS_Data_for_graphs(result_of_work);
+        return stringBuilder.bsDataForGraphs(arResultOfWork);
     }
 }
