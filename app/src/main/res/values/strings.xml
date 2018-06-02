@@ -1,8 +1,11 @@
 <resources>
     <string name="app_name">SensorsTest</string>
 
-    <!-- Текст для уведомления -->
+    <!-- Значения для уведомления -->
     <string name="text_for_Notification">Обработка данных с датчиков</string>
+    <string name="st_channel_id">my_channel_id_01</string>
+    <string name="st_name">my_channel</string>
+    <string name="st_description">This is my channel</string>
 
     <!-- Датчики, которые используются в приложении -->
     <string name="ACCELERATION">Акселерометр</string>
@@ -10,5 +13,8 @@
 
     <!-- Время за которое строится график и за которое отчищается БД (в милисекундах) -->
     <string name="stInterval_Step">300000</string>
+
+
+
 
 </resources>

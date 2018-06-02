@@ -1,6 +1,7 @@
 package com.ashu.sensorstest.services;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -14,17 +15,17 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import com.ashu.sensorstest.MainActivity;
 import com.ashu.sensorstest.R;
 import com.ashu.sensorstest.data.Data_for_graphsDBHelper;
 import com.ashu.sensorstest.sensors.Sensors;
 import com.ashu.sensorstest.string_builders.StringBuilders;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class MainService extends Service {
@@ -195,13 +196,27 @@ public class MainService extends Service {
     //создаем уведомление
     private void sendNotification(String Title, String Text) {
 
+        String channel_Id = getResources().getString(R.string.st_name);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+
+            CharSequence name = getResources().getString(R.string.st_name);
+            String Description = getResources().getString(R.string.st_description);
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel mChannel = new NotificationChannel(channel_Id, name, importance);
+            mChannel.setDescription(Description);
+            notificationManager.createNotificationChannel(mChannel);
+
+        }
+
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction(Intent.ACTION_MAIN);
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
 
         PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "my_channel_id_01");
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channel_Id);
         builder.setContentIntent(contentIntent)
                 .setOngoing(true)   //Запретить "смахивание"
                 .setSmallIcon(R.mipmap.ic_launcher)
