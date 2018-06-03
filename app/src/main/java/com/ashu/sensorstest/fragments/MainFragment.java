@@ -1,7 +1,5 @@
 package com.ashu.sensorstest.fragments;
 
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -28,12 +26,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static android.content.Context.SENSOR_SERVICE;
-
 public class MainFragment extends Fragment {
 
-    private Sensor sensorGyroscope;
-    private Sensor sensorAccelerometer;
+    private int counterGyroscope;
+    private int counterAccelerometer;
 
     private LineChart mChart1;
     private LineChart mChart2;
@@ -56,12 +52,9 @@ public class MainFragment extends Fragment {
         progressBar = v.findViewById(R.id.progressBar);
         llChart = v.findViewById(R.id.llChart);
 
-        //проверяем наличие датчиков
-        SensorManager sensorManagerService = (SensorManager) Objects.requireNonNull(getActivity()).getSystemService(SENSOR_SERVICE);
-        if (sensorManagerService != null) {
-            sensorGyroscope = sensorManagerService.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-            sensorAccelerometer = sensorManagerService.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        }
+        counterGyroscope = 0;
+        counterAccelerometer = 0;
+
 
         //проверяем наличие/создаем локальную БД
         mDBHelperGraphs = new DataForGraphsDBHelper(getContext());
@@ -106,15 +99,30 @@ public class MainFragment extends Fragment {
                 String stIntervalStep = getResources().getString(R.string.stIntervalStep);
                 int iIntervalStep = Integer.parseInt(stIntervalStep);
 
-                //если датчик есть, то делаем запрос данных в БД
-                if(!(sensorGyroscope == null)){
-                    loadDataFromDB(getResources().getString(R.string.stGyroscope), timenow, iIntervalStep);
-                    data1 = data;
+                /*
+                    Делаем запрос в базу на наличие данных по датчику.
+                    Если true, то рисуем график.
+                    Если false, то увеличиваем counter датчика на 1. Как только он достигнет 3,
+                    отрисовка графика прекратится.
+                    Простым языком. Если в течении трех секунд после создания экрана в БД так
+                    и не появились данные, значит их и не будет.
+                 */
+                if (counterGyroscope < 3){
+                    if (mDBHelperGraphs.existsDataInDB(getResources().getString(R.string.stGyroscope))){
+                        loadDataFromDB(getResources().getString(R.string.stGyroscope), timenow, iIntervalStep);
+                        data1 = data;
+                    }else {
+                        counterGyroscope++;
+                    }
                 }
 
-                if (!(sensorAccelerometer == null)){
-                    loadDataFromDB(getResources().getString(R.string.stAcceleration), timenow, iIntervalStep);
-                    data2 = data;
+                if (counterAccelerometer < 3){
+                    if (mDBHelperGraphs.existsDataInDB(getResources().getString(R.string.stAcceleration))){
+                        loadDataFromDB(getResources().getString(R.string.stAcceleration), timenow, iIntervalStep);
+                        data2 = data;
+                    }else {
+                        counterAccelerometer++;
+                    }
                 }
 
                 drawingGraphs(data1, data2);
@@ -131,10 +139,10 @@ public class MainFragment extends Fragment {
             public void run() {
 
                 //если есть датчик и данные для него, то запускаем настройку данных и отображения виджета
-                if (!(sensorGyroscope == null ) && !(data1 == null)){
+                if ((counterGyroscope < 3) && !(data1 == null)){
                     drawGraph1(data1);
                 }
-                if(!(sensorAccelerometer == null)&& !(data2 == null)){
+                if((counterAccelerometer < 3) && !(data2 == null)){
                     drawGraph2(data2);
                 }
 

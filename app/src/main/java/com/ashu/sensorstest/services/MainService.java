@@ -157,13 +157,21 @@ public class MainService extends Service {
         long lTimeNow = takeTimeNow();
         String stRowFotWriting;
 
-        String stSensorType = getResources().getString(R.string.stGyroscope);
-        stRowFotWriting = mSensors.gyroscope(arbBuffer1); //отправиили массив, получили строку
-        mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting); //записали строку в БД
+        /*
+            Если датчика нет в устройстве, то на вход будем получать массив 0'вого размера.
+            А значит нет данных для обработки. Следовательно обработка и запись в БД не требуется.
+         */
+        if (arbBuffer1.size() > 0){
+            String stSensorType = getResources().getString(R.string.stGyroscope);
+            stRowFotWriting = mSensors.gyroscope(arbBuffer1); //отправиили массив, получили строку
+            mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting); //записали строку в БД
+        }
 
-        stSensorType = getResources().getString(R.string.stAcceleration);
-        stRowFotWriting = mSensors.acceleration(arBuffer2);
-        mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting);
+        if(arBuffer2.size() > 0){
+            String stSensorType = getResources().getString(R.string.stAcceleration);
+            stRowFotWriting = mSensors.acceleration(arBuffer2);
+            mDbHelperGraphs.recordingDataForGraphs(stSensorType, lTimeNow, stRowFotWriting);
+        }
     }
 
     /*

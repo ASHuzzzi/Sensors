@@ -173,6 +173,33 @@ public class DataForGraphsDBHelper extends SQLiteOpenHelper {
         return arQueryResult;
     }
 
+    /*
+        Проверяем наличие данных для датчика
+     */
+    public boolean existsDataInDB (String stSensorType){
+        myDataBase = this.getReadableDatabase();
+
+        Cursor cursor;
+
+        String[] projection = {DBDataCollection.stColumnSensorType};
+
+        String selection = DBDataCollection.stColumnSensorType + "= '" + stSensorType + "'";
+
+        cursor = myDataBase.query(
+                DBDataCollection.stTableName,
+                projection,
+                selection,
+                null,
+                null,
+                null,
+                null
+        );
+
+        boolean exists = (cursor.getCount() > 0);
+        cursor.close();
+        return exists;
+    }
+
     public void Close_DB_for_graphs(){
         myDataBase.close();
     }
