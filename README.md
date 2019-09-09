@@ -15,5 +15,5 @@
 Минимальная версия SDK 21.
 
 Скриншот интерфейса:
-
+<p align="center">
 <a> <img src="https://user-images.githubusercontent.com/25584477/40293621-809da3d6-5cda-11e8-9d58-6e44b9953d12.png"  height="300" width="533"> </a>
